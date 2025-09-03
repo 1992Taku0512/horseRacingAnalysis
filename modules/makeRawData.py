@@ -43,34 +43,35 @@ class makeHorseData:
     def getHorseHTML(self, skipResult=False,skipPED=True):
         with tqdm(self.horseIDList) as urlPbar:
             urlPbar.set_description("getHorseHTML")
-                
+
+            #browserの設定
+            service = Service()
+            service.creation_flags = 0x08000000  
+            option = Options()
+            option.add_argument('--headless')
+            browser = webdriver.Chrome(options=option,service=service)
+
             for horseID in urlPbar:
                 urlPbar.set_postfix({"horseID":horseID})
                 #馬の過去成績のHTML取得=====================================================
                 if skipResult == False or os.path.isfile(f"../data/html/horse/{horseID}.txt") == False :
                     urlPbar.set_postfix({"horseID":horseID + "(過去成績)"})
-                    url = "https://db.netkeiba.com/horse/" + horseID
-                    headers = {'User-Agent': random.choice(my_snipets.makeUserAgents())}
-                    html = requests.get(url, headers=headers)
-                    html.encoding = "EUC-JP"
 
-                    with open(f"../data/html/horse/{horseID}.txt","w",encoding="utf-8") as f:
-                        f.write(html.text)
-                    
-                    time.sleep(2)
+                    browser.get("https://db.netkeiba.com/horse/" + horseID)
+                    html = browser.page_source
+                    with open(f"../../../data/html/horse/{horseID}.txt","w",encoding="utf-8") as f:
+                        f.write(html)
 
                 #馬の血統表情報のHTML取得===================================================
                 if skipPED == False or os.path.isfile(f"../data/html/ped/{horseID}.txt") == False :
                     urlPbar.set_postfix({"horseID":horseID + "(血統表)"})
-                    url2 = "https://db.netkeiba.com/horse/ped/" + horseID
-                    headers2 = {'User-Agent': random.choice(my_snipets.makeUserAgents())}
-                    html2 = requests.get(url2, headers=headers2)
-                    html2.encoding = "EUC-JP"
 
-                    with open(f"../data/html/ped/{horseID}.txt","w",encoding="utf-8") as f:
-                        f.write(html2.text)
-                    
-                    time.sleep(2)
+                    browser.get("https://db.netkeiba.com/horse/ped/" + horseID)
+                    html2 = browser.page_source
+                    with open(f"../../../data/html/ped/{horseID}.txt","w",encoding="utf-8") as f:
+                        f.write(html2)
+
+            browser.quit()
         return
 
     def makeHorseRawData(self,skipResult=False,skipPED=True):
@@ -84,11 +85,11 @@ class makeHorseData:
             urlPbar.set_description("makeHorseRawData")
             for horseID in urlPbar:
                 #馬の過去成績のrawデータを作成================================================            
-                if skipResult == False or os.path.isfile(f"../data/rawData/horse/{horseID}.pickle") == False:
+                if skipResult == False or os.path.isfile(f"../../../data/rawData/horse/{horseID}.pickle") == False:
                     urlPbar.set_postfix({"horseID":horseID + "(過去成績)"})
 
                     # htmlが格納されたファイルを開く
-                    with open(f"../data/html/horse/{horseID}.txt","r",encoding="utf-8") as f:
+                    with open(f"../../../data/html/horse/{horseID}.txt","r",encoding="utf-8") as f:
                         html = f.read()
 
                     #htmlから過去戦績のデータを抽出
@@ -101,17 +102,17 @@ class makeHorseData:
                         horseResults = contents[3]
                     
                     #データフレームをpickle形式で保存
-                    horseResults.to_pickle(f"../data/rawData/horse/{horseID}.pickle")
+                    horseResults.to_pickle(f"../../../data/rawData/horse/{horseID}.pickle")
 
-                if skipPED == False or os.path.isfile(f"../data/rawData/ped/{horseID}.pickle") == False:
+                if skipPED == False or os.path.isfile(f"../../../data/rawData/ped/{horseID}.pickle") == False:
                     urlPbar.set_postfix({"horseID":horseID + "(血統情報)"})
 
-                    with open(f"../data/html/ped/{horseID}.txt","r",encoding="utf-8") as f: #ファイルを開く
+                    with open(f"../../../data/html/ped/{horseID}.txt","r",encoding="utf-8") as f: #ファイルを開く
                         html = f.read()       
 
                     soup = BeautifulSoup(html,"html.parser") #htmlをsoupオブジェクトへ
 
-                    contents = soup.find("table",attrs={"summary":"5代血統表"}).find_all("a",attrs={"href":re.compile(r"^/horse/\d+")}) #血統表の馬名の部分を抽出
+                    contents = soup.find("table",attrs={"summary":"5代血統表"}).find_all("a",attrs={"href":re.compile(r"/horse/\d+")}) #血統表の馬名の部分を抽出
 
                     pedHorseNameList = []
                     for text in contents:
@@ -124,7 +125,7 @@ class makeHorseData:
                         PEDFinDF.rename(columns={int(f"{i}"):f"{columns[i]}"},inplace=True)
                     PEDFinDF.rename(index={0:str(horseID)},inplace=True)
 
-                    PEDFinDF.to_pickle(f"../data/rawData/ped/{horseID}.pickle")
+                    PEDFinDF.to_pickle(f"../../../data/rawData/ped/{horseID}.pickle")
         print(f"{len(self.horseIDList)}頭の馬の過去成績/血統表データを作成しました。")
              
         return
@@ -208,16 +209,19 @@ class makeRaceData:
 
         with tqdm(self.raceDateURLList) as urlPbar:
             urlPbar.set_description(desc="makeRaceURLList")
+
+            #browserの設定
+            service = Service()
+            service.creation_flags = 0x08000000  
+            option = Options()
+            option.add_argument('--headless')
+            browser = webdriver.Chrome(options=option,service=service)
+
             for tgtURL in urlPbar:
                 dateStr = tgtURL.split("=")[1]
                 urlPbar.set_postfix({"date":dateStr[0:4]+"/"+dateStr[4:6]+"/"+dateStr[6:8]})
-                # Seleniumを使用してブラウザを起動し、対象URLにアクセス
-                service = Service()
-                service.creation_flags = 0x08000000  
-                option = Options()
-                option.add_argument('--headless')
 
-                browser = webdriver.Chrome(options=option,service=service)
+                # Seleniumを使用してブラウザを起動し、対象URLにアクセス
                 browser.get(tgtURL)
 
                 # ブラウザから必要な情報を取得
@@ -226,10 +230,8 @@ class makeRaceData:
                     raceURL = item.find_element(By.TAG_NAME,"a").get_attribute("href")
                     self.raceIDList.append(re.sub(r"\D+", "", str(raceURL.split("/")[-1:])))
 
-                # ブラウザを閉じる
-                browser.quit()
-
-                #time.sleep(2)
+            # ブラウザを閉じる
+            browser.quit()
 
     def screpingRaceHTML(self,skip:bool=True):
         """
@@ -238,18 +240,28 @@ class makeRaceData:
         """
         with tqdm(self.raceIDList) as urlPbar:
             urlPbar.set_description("screpingRaceHTML")
+
+            #browserの設定
+            service = Service()
+            service.creation_flags = 0x08000000  
+            option = Options()
+            option.add_argument('--headless')
+            browser = webdriver.Chrome(options=option,service=service)
+
             for raceID in urlPbar:
                 urlPbar.set_postfix({"raceID":raceID})
-                if skip == False or os.path.isfile(f"../data/html/race/{raceID}.txt") == False:
+                if skip == False or os.path.isfile(f"../../../data/html/race/{raceID}.txt") == False:
                     url = "https://db.netkeiba.com/race/" + raceID
-                    headers = {'User-Agent': random.choice(my_snipets.makeUserAgents())}
-                    html = requests.get(url, headers=headers)
-                    html.encoding = "EUC-JP"
+                    # Seleniumを使用してブラウザを起動し、対象URLにアクセス
+                    browser.get(url)
+                    html = browser.page_source
 
-                    with open(f"../data/html/race/{raceID}.txt","w") as f:
-                        f.write(html.text)
+                    with open(f"../../../data/html/race/{raceID}.txt","w") as f:
+                        f.write(html)
 
-                    time.sleep(2)
+                    time.sleep(1)
+            # ブラウザを閉じる
+            browser.quit()
 
     def makeRawDataRace(self,skip:bool = True):
         """
@@ -259,16 +271,16 @@ class makeRaceData:
         with tqdm(self.raceIDList) as urlPbar:
             urlPbar.set_description("makeRawDataRace")               
             for raceID in urlPbar:
-                if skip == False or os.path.isfile(f"../data/rawData/raceResults/{raceID}.pickle") == False or os.path.isfile(f"../data/rawData/raceInfos/{raceID}.pickle") == False or os.path.isfile(f"../data/rawData/return/{raceID}.pickle") == False:
+                if skip == False or os.path.isfile(f"../../../data/rawData/raceResults/{raceID}.pickle") == False or os.path.isfile(f"../../../data/rawData/raceInfos/{raceID}.pickle") == False or os.path.isfile(f"../../../data/rawData/return/{raceID}.pickle") == False:
                     urlPbar.set_postfix({"raceID":raceID})
                     #共通処理======================================================================================================================
-                    with open(f"../data/html/race/{raceID}.txt","r") as f:
+                    with open(f"../../../data/html/race/{raceID}.txt","r") as f:
                         html = f.read()
 
                     soup = BeautifulSoup(html,features="lxml") #htmlをsoupオブジェクトへ
                     
                     #receResultsに関する処理=======================================================================================================
-                    if skip == False or os.path.isfile(f"../data/rawData/raceResults/{raceID}.pickle") == False:
+                    if skip == False or os.path.isfile(f"../../../data/rawData/raceResults/{raceID}.pickle") == False:
                         raceResults = pd.DataFrame() #最終出力データセットの定義
                         try:
                             dfRace = pd.read_html(StringIO(str(soup("table")[0])))[0]
@@ -296,10 +308,10 @@ class makeRaceData:
 
                         raceResults = pd.concat([raceResults,dfRace])
 
-                        raceResults.to_pickle(f"../data/rawData/raceResults/{raceID}.pickle")
+                        raceResults.to_pickle(f"../../../data/rawData/raceResults/{raceID}.pickle")
 
                     #receInfosに関する処理==========================================================================================================
-                    if skip == False or os.path.isfile(f"../data/rawData/raceInfos/{raceID}.pickle") == False:
+                    if skip == False or os.path.isfile(f"../../../data/rawData/raceInfos/{raceID}.pickle") == False:
                         raceInfos = pd.DataFrame() #最終出力データセットの定義
                         text = soup.find("div",attrs={"class" : "data_intro"}).find_all("p")[0].text + soup.find("div",attrs={"class" : "data_intro"}).find_all("p")[1].text
                         info = re.findall("\w+",text)
@@ -324,11 +336,11 @@ class makeRaceData:
                         raceInfos = pd.DataFrame(infoDict,index=[0])
                         #raceInfos = pd.concat([raceInfos, dfInfo], ignore_index=True)
 
-                        raceInfos.to_pickle(f"../data/rawData/raceInfos/{raceID}.pickle")
+                        raceInfos.to_pickle(f"../../../data/rawData/raceInfos/{raceID}.pickle")
                     
                     #returnTableに関する処理========================================================================================================
                     #同着の時にイレギュラーパターンがあるからそれを処理する機能の追加必須
-                    if skip == False or os.path.isfile(f"../data/rawData/return/{raceID}.pickle") == False:
+                    if skip == False or os.path.isfile(f"../../../data/rawData/return/{raceID}.pickle") == False:
                         table1 = pd.read_html(StringIO(str(soup("table")[1]).replace("<br/>","or")))[0]
                         table2 = pd.read_html(StringIO(str(soup("table")[2]).replace("<br/>","or")))[0]
                         returnTable = pd.concat([table1,table2])
@@ -361,5 +373,5 @@ class makeRaceData:
                         returnTable["raceID"] = raceID
 
 
-                        returnTable.to_pickle(f"../data/rawData/return/{raceID}.pickle")
+                        returnTable.to_pickle(f"../../../data/rawData/return/{raceID}.pickle")
         print(f"{self.startYM[0:4]}/{self.startYM[4:6]}～{self.endYM[0:4]}/{self.endYM[4:6]}のレース情報のデータを作成しました")

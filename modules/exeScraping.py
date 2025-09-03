@@ -6,7 +6,7 @@ import pandas as pd
 os.chdir(os.path.dirname(__file__))
 
 #レース結果のデータを作成
-MRD = makeRaceData("202503","202506")
+MRD = makeRaceData("202501","202501")
 MRD.makeYMList()
 MRD.makeRaceDateURLList()
 MRD.makeRaceURLList()
@@ -17,7 +17,7 @@ MRD.makeRawDataRace(skip=True)
 horseIDListPrep = []
 for raceID in MRD.raceIDList:
     try:#競争中止とかで結果がない場合があるので例外処理
-        raceResultsDF = pd.read_pickle(f"../data/rawData/raceResults/{raceID}.pickle")
+        raceResultsDF = pd.read_pickle(f"../../../data/rawData/raceResults/{raceID}.pickle")
         horseIDTmp = raceResultsDF["horseID"].unique()
         horseIDListPrep.extend(horseIDTmp)
     except FileNotFoundError:
