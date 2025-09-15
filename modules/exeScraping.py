@@ -1,12 +1,12 @@
-from makeRawData import makeRaceData,makeHorseData
 import os
 import pandas as pd
+from makeRawData import makeRaceData,makeHorseData
 
 #カレントディレクトリを自身が格納されているフォルダパスに変更
 os.chdir(os.path.dirname(__file__))
 
 #レース結果のデータを作成
-MRD = makeRaceData("202501","202501")
+MRD = makeRaceData("201901","201912")
 MRD.makeYMList()
 MRD.makeRaceDateURLList()
 MRD.makeRaceURLList()
@@ -24,6 +24,7 @@ for raceID in MRD.raceIDList:
         continue
 
 horseIDList = pd.DataFrame(horseIDListPrep)[0].unique().tolist()
+horseIDList.sort()
 
 #馬の過去成績/血統データを作成
 MHD = makeHorseData(horseIDList)

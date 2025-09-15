@@ -38,7 +38,7 @@ class makeHorseData:
     """
     def __init__(self, horseIDList:list):
         self.horseIDList = horseIDList
-        print(f"{len(self.horseIDList)}頭の馬の過去成績/血統表データを作成します。")
+        print(f"{len(self.horseIDList)}頭の馬の過去成績/血統情報データを作成します。")
     
     def getHorseHTML(self, skipResult=False,skipPED=True):
         with tqdm(self.horseIDList) as urlPbar:
@@ -54,7 +54,7 @@ class makeHorseData:
             for horseID in urlPbar:
                 urlPbar.set_postfix({"horseID":horseID})
                 #馬の過去成績のHTML取得=====================================================
-                if skipResult == False or os.path.isfile(f"../data/html/horse/{horseID}.txt") == False :
+                if skipResult == False or os.path.isfile(f"../../../data/html/horse/{horseID}.txt") == False :
                     urlPbar.set_postfix({"horseID":horseID + "(過去成績)"})
 
                     browser.get("https://db.netkeiba.com/horse/" + horseID)
@@ -63,8 +63,8 @@ class makeHorseData:
                         f.write(html)
 
                 #馬の血統表情報のHTML取得===================================================
-                if skipPED == False or os.path.isfile(f"../data/html/ped/{horseID}.txt") == False :
-                    urlPbar.set_postfix({"horseID":horseID + "(血統表)"})
+                if skipPED == False or os.path.isfile(f"../../../data/html/ped/{horseID}.txt") == False :
+                    urlPbar.set_postfix({"horseID":horseID + "(血統情報)"})
 
                     browser.get("https://db.netkeiba.com/horse/ped/" + horseID)
                     html2 = browser.page_source

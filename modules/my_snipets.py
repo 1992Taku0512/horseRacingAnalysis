@@ -30,3 +30,30 @@ def getHorseResultsColumns():
        '通過', 'ペース', '上り', '馬体重', '厩舎 ｺﾒﾝﾄ', '備考', '勝ち馬 (2着馬)', '賞金']
     
     return returnList
+
+def getTrackName(raceID: str) -> str:
+    """
+    raceIDから開催競馬場名を取得する関数
+    """
+    if raceID[4:6] == "01":
+        trackName = "札幌"
+    elif raceID[4:6] == "02":
+        trackName = "函館"
+    elif raceID[4:6] == "03":
+        trackName = "福島"
+    elif raceID[4:6] == "04":
+        trackName = "新潟"
+    elif raceID[4:6] == "05":
+        trackName = "東京"
+    elif raceID[4:6] == "06":
+        trackName = "中山"
+    elif raceID[4:6] == "07":
+        trackName = "中京"
+    elif raceID[4:6] == "08":
+        trackName = "京都"
+    elif raceID[4:6] == "09":
+        trackName = "阪神"
+    elif raceID[4:6] == "10":
+        trackName = "小倉"
+
+    return trackName
